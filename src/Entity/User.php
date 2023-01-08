@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -43,6 +45,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $signedupOn = null;
+
+    #[ORM\ManyToMany(targetEntity: Quest::class, inversedBy: 'participants')]
+    private Collection $acceptedQuests;
+
+    #[ORM\OneToMany(mappedBy: 'createdBy', targetEntity: Quest::class)]
+    private Collection $createdQuests;
+
+    public function __construct()
+    {
+        $this->acceptedQuests = new ArrayCollection();
+        $this->createdQuests = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -170,6 +184,60 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setSignedupOn(\DateTimeInterface $signedupOn): self
     {
         $this->signedupOn = $signedupOn;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Quest>
+     */
+    public function getAcceptedQuests(): Collection
+    {
+        return $this->acceptedQuests;
+    }
+
+    public function addAcceptedQuest(Quest $acceptedQuest): self
+    {
+        if (!$this->acceptedQuests->contains($acceptedQuest)) {
+            $this->acceptedQuests->add($acceptedQuest);
+        }
+
+        return $this;
+    }
+
+    public function removeAcceptedQuest(Quest $acceptedQuest): self
+    {
+        $this->acceptedQuests->removeElement($acceptedQuest);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Quest>
+     */
+    public function getCreatedQuests(): Collection
+    {
+        return $this->createdQuests;
+    }
+
+    public function addCreatedQuest(Quest $createdQuest): self
+    {
+        if (!$this->createdQuests->contains($createdQuest)) {
+            $this->createdQuests->add($createdQuest);
+            $createdQuest->setCreatedBy($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCreatedQuest(Quest $createdQuest): self
+    {
+        if ($this->createdQuests->removeElement($createdQuest)) {
+            // set the owning side to null (unless already changed)
+            if ($createdQuest->getCreatedBy() === $this) {
+                $createdQuest->setCreatedBy(null);
+            }
+        }
 
         return $this;
     }

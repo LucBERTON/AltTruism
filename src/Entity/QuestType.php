@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\QuestTypeRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: QuestTypeRepository::class)]
@@ -18,6 +20,14 @@ class QuestType
 
     #[ORM\Column(length: 255)]
     private ?string $description = null;
+
+    #[ORM\OneToMany(mappedBy: 'questType', targetEntity: Quest::class)]
+    private Collection $questsOfThisType;
+
+    public function __construct()
+    {
+        $this->questsOfThisType = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -44,6 +54,36 @@ class QuestType
     public function setDescription(string $description): self
     {
         $this->description = $description;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Quest>
+     */
+    public function getQuestsOfThisType(): Collection
+    {
+        return $this->questsOfThisType;
+    }
+
+    public function addQuestsOfThisType(Quest $questsOfThisType): self
+    {
+        if (!$this->questsOfThisType->contains($questsOfThisType)) {
+            $this->questsOfThisType->add($questsOfThisType);
+            $questsOfThisType->setQuestType($this);
+        }
+
+        return $this;
+    }
+
+    public function removeQuestsOfThisType(Quest $questsOfThisType): self
+    {
+        if ($this->questsOfThisType->removeElement($questsOfThisType)) {
+            // set the owning side to null (unless already changed)
+            if ($questsOfThisType->getQuestType() === $this) {
+                $questsOfThisType->setQuestType(null);
+            }
+        }
 
         return $this;
     }

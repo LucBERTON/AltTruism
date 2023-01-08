@@ -2,6 +2,8 @@
 
 namespace App\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\QuestRepository;
@@ -31,6 +33,25 @@ class Quest
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $startsOn = null;
+
+    #[ORM\Column]
+    private ?bool $isFinished = null;
+
+    #[ORM\ManyToMany(targetEntity: User::class, mappedBy: 'acceptedQuests')]
+    private Collection $participants;
+
+    #[ORM\ManyToOne(inversedBy: 'createdQuests')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $createdBy = null;
+
+    #[ORM\ManyToOne(inversedBy: 'questsOfThisType')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?QuestType $questType = null;
+
+    public function __construct()
+    {
+        $this->participants = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -105,6 +126,69 @@ class Quest
     public function setStartsOn(?\DateTimeInterface $startsOn): self
     {
         $this->startsOn = $startsOn;
+
+        return $this;
+    }
+
+    public function isIsFinished(): ?bool
+    {
+        return $this->isFinished;
+    }
+
+    public function setIsFinished(bool $isFinished): self
+    {
+        $this->isFinished = $isFinished;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function getParticipants(): Collection
+    {
+        return $this->participants;
+    }
+
+    public function addParticipant(User $participant): self
+    {
+        if (!$this->participants->contains($participant)) {
+            $this->participants->add($participant);
+            $participant->addAcceptedQuest($this);
+        }
+
+        return $this;
+    }
+
+    public function removeParticipant(User $participant): self
+    {
+        if ($this->participants->removeElement($participant)) {
+            $participant->removeAcceptedQuest($this);
+        }
+
+        return $this;
+    }
+
+    public function getCreatedBy(): ?User
+    {
+        return $this->createdBy;
+    }
+
+    public function setCreatedBy(?User $createdBy): self
+    {
+        $this->createdBy = $createdBy;
+
+        return $this;
+    }
+
+    public function getQuestType(): ?QuestType
+    {
+        return $this->questType;
+    }
+
+    public function setQuestType(?QuestType $questType): self
+    {
+        $this->questType = $questType;
 
         return $this;
     }
